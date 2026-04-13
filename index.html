@@ -225,13 +225,13 @@
     ============================================ */
     .nav {
       position: fixed;
-      top: var(--banner-height);
+      top: var(--banner-height); /* JS overrides this on scroll */
       left: 0;
       right: 0;
       height: var(--nav-height);
       z-index: 100;
       background: transparent;
-      transition: background 0.3s ease, border-color 0.3s ease, top 0.2s ease;
+      transition: background 0.3s ease, border-color 0.3s ease;
       transform: translate3d(0,0,0);
       -webkit-transform: translate3d(0,0,0);
       border-bottom: 1px solid transparent;
@@ -240,7 +240,6 @@
     }
 
     .nav.scrolled {
-      top: 0;
       background: rgba(255,255,255,0.85);
       -webkit-backdrop-filter: blur(12px) saturate(1.8);
       backdrop-filter: blur(12px) saturate(1.8);
@@ -378,7 +377,7 @@
     .nav__drawer {
       display: none;
       position: fixed;
-      top: calc(var(--banner-height) + var(--nav-height));
+      top: calc(var(--banner-height) + var(--nav-height)); /* JS overrides on scroll */
       left: 0;
       right: 0;
       background: var(--navy);
@@ -1850,11 +1849,24 @@
        JAVASCRIPT — No libraries, no GSAP, no AOS
   ============================================ -->
   <script>
-    // ---- NAV SCROLL (passive, Safari GPU-friendly) ----
-    var nav = document.getElementById('nav');
-    window.addEventListener('scroll', function() {
-      nav.classList.toggle('scrolled', window.scrollY > 40);
-    }, { passive: true });
+    // ---- NAV SCROLL — smooth banner tracking, no jump ----
+    var nav        = document.getElementById('nav');
+    var BANNER_H   = 40;  // matches --banner-height
+    var NAV_H      = 64;  // matches --nav-height
+
+    function updateNav() {
+      var scrollY = window.scrollY;
+      var offset  = Math.max(0, BANNER_H - scrollY);
+      // nav follows banner up pixel-by-pixel, no CSS transition on top
+      nav.style.top = offset + 'px';
+      // drawer follows nav so no gap when menu open mid-scroll
+      if (drawer) drawer.style.top = (offset + NAV_H) + 'px';
+      // background/blur kicks in once banner is gone
+      nav.classList.toggle('scrolled', scrollY >= BANNER_H);
+    }
+
+    window.addEventListener('scroll', updateNav, { passive: true });
+    updateNav(); // set correct position on load
 
     // ---- STICKY BAR: hide while hero is in view ----
     var stickyBar = document.querySelector('.mobile-sticky-bar');
